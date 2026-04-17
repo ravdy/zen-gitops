@@ -1,15 +1,12 @@
 replicaCount: 1
-
 image:
   repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/pharma-api-gateway
-  tag: latest
+  tag: sha-4cb984e
   pullPolicy: Always
-
 service:
   type: ClusterIP
   port: 8080
   targetPort: 8080
-
 ingress:
   enabled: true
   className: nginx
@@ -19,7 +16,6 @@ ingress:
   host: qa.pharma.internal
   path: /api(/|$)(.*)
   pathType: Prefix
-
 resources:
   requests:
     cpu: 150m
@@ -27,13 +23,11 @@ resources:
   limits:
     cpu: 500m
     memory: 512Mi
-
 autoscaling:
   enabled: true
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 70
-
 livenessProbe:
   path: /actuator/health
   port: 8080
@@ -42,7 +36,6 @@ livenessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-
 readinessProbe:
   path: /actuator/health/readiness
   port: 8080
@@ -51,7 +44,6 @@ readinessProbe:
   timeoutSeconds: 5
   failureThreshold: 3
   successThreshold: 1
-
 configmap:
   SPRING_PROFILES_ACTIVE: qa
   DB_HOST: <RDS_ENDPOINT>
@@ -59,13 +51,11 @@ configmap:
   AUTH_SERVICE_URL: "http://auth-service:8080"
   SERVER_PORT: "8080"
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
-
 envFrom:
   - secretRef:
       name: db-credentials
   - secretRef:
       name: jwt-secret
-
 serviceAccount:
   create: true
   annotations:
