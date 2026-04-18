@@ -4,7 +4,7 @@ fullnameOverride: pharma-ui
 
 image:
   repository: 873135413040.dkr.ecr.us-east-1.amazonaws.com/pharma-ui
-  tag: v1.0.0
+  tag: d4af3bb72fd00e7780cb900a868359fef5b2334a
   pullPolicy: Always
 
 service:
