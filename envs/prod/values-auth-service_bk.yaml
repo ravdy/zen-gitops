@@ -1,22 +1,20 @@
 replicaCount: 2
 
-fullnameOverride: manufacturing-service
-
 image:
-  repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/manufacturing-service
-  tag: v1.0.0
+  repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/pharma-auth-service
+  tag: latest
   pullPolicy: Always
 
 service:
   type: ClusterIP
-  port: 8085
-  targetPort: 8085
+  port: 8081
+  targetPort: 8081
 
 ingress:
   enabled: false
   className: nginx
-  host: prod.pharma.internal
-  path: /manufacturing
+  host: pharma.internal
+  path: /auth
   pathType: Prefix
 
 resources:
@@ -35,7 +33,7 @@ autoscaling:
 
 livenessProbe:
   path: /actuator/health
-  port: 8085
+  port: 8081
   initialDelaySeconds: 90
   periodSeconds: 15
   timeoutSeconds: 5
@@ -44,7 +42,7 @@ livenessProbe:
 
 readinessProbe:
   path: /actuator/health/readiness
-  port: 8085
+  port: 8081
   initialDelaySeconds: 60
   periodSeconds: 10
   timeoutSeconds: 5
@@ -55,12 +53,15 @@ configmap:
   SPRING_PROFILES_ACTIVE: prod
   DB_HOST: <RDS_ENDPOINT>
   LOG_LEVEL: WARN
-  SERVER_PORT: "8085"
+  SERVER_PORT: "8081"
+  TOKEN_EXPIRATION_MS: "28800000"
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
 
 envFrom:
   - secretRef:
       name: db-credentials
+  - secretRef:
+      name: jwt-secret
 
 affinity:
   podAntiAffinity:
@@ -70,18 +71,10 @@ affinity:
             - key: app.kubernetes.io/name
               operator: In
               values:
-                - manufacturing-service
+                - auth-service
         topologyKey: kubernetes.io/hostname
-
-volumeMounts:
-  - name: tmp
-    mountPath: /tmp
-
-volumes:
-  - name: tmp
-    emptyDir: {}
 
 serviceAccount:
   create: true
   annotations: {}
-  name: manufacturing-service
+  name: auth-service

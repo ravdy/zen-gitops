@@ -1,10 +1,12 @@
 replicaCount: 1
 
+# fullnameOverride ensures the Kubernetes service name matches the service directory name
+# and matches the default URL expected by api-gateway
 fullnameOverride: drug-catalog-service
 
 image:
   repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/drug-catalog-service
-  tag: latest
+  tag: v1.0.0
   pullPolicy: Always
 
 service:
@@ -21,14 +23,14 @@ ingress:
 
 resources:
   requests:
-    cpu: 150m
+    cpu: 100m
     memory: 256Mi
   limits:
     cpu: 500m
     memory: 512Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 70
@@ -36,6 +38,7 @@ autoscaling:
 livenessProbe:
   path: /actuator/health
   port: 8082
+  # Spring Boot + Flyway migrations need extra time on first startup
   initialDelaySeconds: 90
   periodSeconds: 15
   timeoutSeconds: 5
@@ -61,6 +64,14 @@ configmap:
 envFrom:
   - secretRef:
       name: db-credentials
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
 
 serviceAccount:
   create: true

@@ -4,7 +4,7 @@ fullnameOverride: inventory-service
 
 image:
   repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/inventory-service
-  tag: latest
+  tag: v1.0.0
   pullPolicy: Always
 
 service:
@@ -15,7 +15,7 @@ service:
 ingress:
   enabled: false
   className: nginx
-  host: pharma.internal
+  host: prod.pharma.internal
   path: /inventory
   pathType: Prefix
 
@@ -72,6 +72,14 @@ affinity:
               values:
                 - inventory-service
         topologyKey: kubernetes.io/hostname
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
 
 serviceAccount:
   create: true

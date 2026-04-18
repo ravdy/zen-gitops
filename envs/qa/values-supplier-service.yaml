@@ -4,7 +4,7 @@ fullnameOverride: supplier-service
 
 image:
   repository: <AWS_ACCOUNT_ID>.dkr.ecr.us-east-1.amazonaws.com/supplier-service
-  tag: latest
+  tag: v1.0.0
   pullPolicy: Always
 
 service:
@@ -21,14 +21,14 @@ ingress:
 
 resources:
   requests:
-    cpu: 150m
+    cpu: 100m
     memory: 256Mi
   limits:
     cpu: 500m
     memory: 512Mi
 
 autoscaling:
-  enabled: true
+  enabled: false
   minReplicas: 1
   maxReplicas: 3
   targetCPUUtilizationPercentage: 70
@@ -61,6 +61,14 @@ configmap:
 envFrom:
   - secretRef:
       name: db-credentials
+
+volumeMounts:
+  - name: tmp
+    mountPath: /tmp
+
+volumes:
+  - name: tmp
+    emptyDir: {}
 
 serviceAccount:
   create: true
