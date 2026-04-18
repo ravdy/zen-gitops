@@ -1,7 +1,7 @@
 replicaCount: 1
 image:
   repository: 873135413040.dkr.ecr.us-east-1.amazonaws.com/auth-service
-  tag: sha-c11e73c
+  tag: sha-dbbb634
   pullPolicy: Always
 service:
   type: ClusterIP
