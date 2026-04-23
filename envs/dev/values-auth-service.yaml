@@ -52,8 +52,8 @@ configmap:
 envFrom:
   - secretRef:
       name: db-credentials
-  - secretRef:
-      name: jwt-secret
+#  - secretRef:
+#      name: jwt-secret
 volumeMounts:
   - name: tmp
     mountPath: /tmp
