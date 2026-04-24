@@ -14,7 +14,7 @@ spec:
 
   source:
     repoURL: https://github.com/ravdy/zen-gitops.git
-    targetRevision: HEAD
+    targetRevision: feature/fluent-bit-logging
     path: helm-charts-fluent-bit
     helm:
       valueFiles:
