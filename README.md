@@ -219,6 +219,52 @@ kubectl logs -l app=fluent-bit -n dev --tail=30
 
 ---
 
+## Elastic Cloud Setup
+
+### Login
+
+Go to **https://cloud.elastic.co/login** and sign in with Google.
+
+Once logged in you will land on the Kibana home screen:
+
+![Elastic Cloud Console](docs/images/elastic-cloud-console.png)
+
+---
+
+### Getting the Endpoint URL
+
+The Elasticsearch endpoint is shown at the top of the Kibana home screen next to the **Elasticsearch** label:
+
+```
+https://97f1fa5d7d9d4d58ba3926dfb84ebeb0.us-central1.gcp.cloud.es.io
+```
+
+You can click the copy icon next to it to copy it to your clipboard. This is the value used as `elasticsearch.host` in `envs/dev/values-fluent-bit.yaml`.
+
+---
+
+### Creating an API Key
+
+1. Click **API keys** in the top-right corner of the Kibana home screen (visible in the screenshot above)
+2. Click **Create API key**
+3. Give it a name (e.g. `fluent-bit-dev`) and set appropriate index privileges (`write`, `create_index`) on `*` or a specific index pattern
+4. Click **Create** — copy the **encoded** key immediately (it is shown only once)
+
+The encoded key looks like:
+```
+Ylc4VnY1MEJKQU5ESDFhNk1PcFo6QktkNnBGM3FndWV4SkoxQ2I3bjk2dw==
+```
+
+Update the Kubernetes secret with the new key:
+```bash
+kubectl create secret generic fluent-bit-elastic-credentials \
+  --from-literal=api_key='<your-encoded-api-key>' \
+  -n dev \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+---
+
 ## How Fluent Bit Works in EKS
 
 ### DaemonSet — one pod per node
