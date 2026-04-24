@@ -156,3 +156,63 @@ git push
 
 See `zen-infra/docs/FULL-DEPLOYMENT-GUIDE.md` in the `zen-infra` repository for the complete
 step-by-step guide covering all 4 stages: infra → prerequisites → CI → ArgoCD CD.
+
+---
+
+## Fluent Bit Log Shipping (EKS → Elastic Cloud)
+
+Fluent Bit runs as a DaemonSet in the `dev` namespace and ships container logs to Elastic Cloud.
+
+**Manifests:** `k8s/fluent-bit/`
+
+| File | Purpose |
+|---|---|
+| `rbac.yaml` | ServiceAccount, ClusterRole, ClusterRoleBinding |
+| `secret.yaml` | Elastic Cloud API key |
+| `configmap.yaml` | Fluent Bit config, parsers, and Lua script |
+| `daemonset.yaml` | DaemonSet — one pod per node |
+
+### How it works
+
+1. **INPUT** — tails `/var/log/containers/*.log` on every node (Docker and CRI formats)
+2. **FILTER** — Kubernetes filter enriches each record with pod metadata (labels, namespace, pod name)
+3. **FILTER** — grep keeps only `dev` namespace logs and drops Fluent Bit's own logs
+4. **FILTER** — Lua script (`service_index.lua`) extracts the service name from the pod's `app` label and sets it as `_service_name` on the record
+5. **OUTPUT** — Elasticsearch output ships to Elastic Cloud over TLS using an API key; `Logstash_Prefix_Key _service_name` creates one daily index per service
+
+### Elastic Cloud endpoint
+
+```
+https://97f1fa5d7d9d4d58ba3926dfb84ebeb0.us-central1.gcp.cloud.es.io:443
+```
+
+### Index naming
+
+Each service gets its own daily index:
+
+```
+api-gateway-YYYY.MM.DD
+auth-service-YYYY.MM.DD
+drug-catalog-service-YYYY.MM.DD
+inventory-service-YYYY.MM.DD
+manufacturing-service-YYYY.MM.DD
+notification-service-YYYY.MM.DD
+pharma-ui-YYYY.MM.DD
+```
+
+### Deploy
+
+```bash
+kubectl apply -f k8s/fluent-bit/rbac.yaml
+kubectl apply -f k8s/fluent-bit/configmap.yaml
+kubectl apply -f k8s/fluent-bit/secret.yaml
+kubectl apply -f k8s/fluent-bit/daemonset.yaml
+
+# Verify
+kubectl get daemonset fluent-bit -n dev
+kubectl logs -l app=fluent-bit -n dev --tail=30
+```
+
+### Image
+
+`fluent/fluent-bit:latest` — requires `latest` (or ≥ 4.0) for `http_api_key` support in the ES output plugin.
