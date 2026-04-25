@@ -1,7 +1,7 @@
 replicaCount: 1
 fullnameOverride: api-gateway
 image:
-  repository: 873135413040.dkr.ecr.us-east-1.amazonaws.com/api-gateway
+  repository: 952654481781.dkr.ecr.us-east-1.amazonaws.com/api-gateway
   tag: sha-d419345
   pullPolicy: Always
 service:
