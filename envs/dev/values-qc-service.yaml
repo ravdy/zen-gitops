@@ -27,7 +27,7 @@ autoscaling:
   maxReplicas: 3
   targetCPUUtilizationPercentage: 70
 livenessProbe:
-  path: /wrong-liveness-path
+  path: /actuator/health
   port: 8086
   initialDelaySeconds: 5
   periodSeconds: 5
