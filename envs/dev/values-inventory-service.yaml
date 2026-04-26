@@ -16,11 +16,11 @@ ingress:
   pathType: Prefix
 resources:
   requests:
-    cpu: 64
+    cpu: 100m
     memory: 100Gi
   limits:
     cpu: 500m
-    memory: 512Mi
+    memory: 100Gi
 autoscaling:
   enabled: false
   minReplicas: 1
