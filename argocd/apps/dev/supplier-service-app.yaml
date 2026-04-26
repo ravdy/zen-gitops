@@ -14,7 +14,7 @@ spec:
 
   source:
     # Replace 'ravdy' with your GitHub username after forking zen-gitops
-    repoURL: https://github.com/ravdy/zen-gitops.git
+    repoURL: https://github.com/Mokshagna143/zen-gitops.git
     targetRevision: HEAD
     path: helm-charts
     helm:
