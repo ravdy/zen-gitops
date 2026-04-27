@@ -11,7 +11,7 @@ service:
 ingress:
   enabled: false
   className: nginx
-  host: qa.pharma.internal
+  host: dev.pharma.internal
   path: /auth
   pathType: Prefix
 resources:
@@ -43,8 +43,8 @@ readinessProbe:
   failureThreshold: 3
   successThreshold: 1
 configmap:
-  SPRING_PROFILES_ACTIVE: qa
-  DB_HOST: pharma-qa-postgres.cs3c424yurej.us-east-1.rds.amazonaws.com
+  SPRING_PROFILES_ACTIVE: dev
+  DB_HOST: pharma-dev-postgres.cs7skuimahjq.us-east-1.rds.amazonaws.com
   LOG_LEVEL: DEBUG
   SERVER_PORT: "8081"
   TOKEN_EXPIRATION_MS: "86400000"
