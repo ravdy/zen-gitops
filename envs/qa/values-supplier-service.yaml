@@ -11,7 +11,7 @@ service:
 ingress:
   enabled: false
   className: nginx
-  host: qa.pharma.internal
+  host: dev.pharma.internal
   path: /suppliers
   pathType: Prefix
 resources:
@@ -43,9 +43,9 @@ readinessProbe:
   failureThreshold: 3
   successThreshold: 1
 configmap:
-  SPRING_PROFILES_ACTIVE: qa
-  DB_HOST: <RDS_ENDPOINT>
-  LOG_LEVEL: INFO
+  SPRING_PROFILES_ACTIVE: dev
+  DB_HOST: pharma-dev-postgres.cs7skuimahjq.us-east-1.rds.amazonaws.com
+  LOG_LEVEL: DEBUG
   SERVER_PORT: "8084"
   MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE: "health,info,metrics,prometheus"
 envFrom:
