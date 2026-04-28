@@ -20,6 +20,25 @@ grafana:
   plugins:
     - grafana-piechart-panel
     - grafana-worldmap-panel
+  # Pre-provision dashboards from Grafana.com
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: default
+          orgId: 1
+          folder: Pharma
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/default
+  dashboards:
+    default:
+      fluent-bit:
+        gnetId: 7752
+        revision: 1
+        datasource: Prometheus
 
 alertmanager:
   enabled: true

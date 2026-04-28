@@ -5,4 +5,12 @@ metadata:
   labels:
     env: dev
     managed-by: terraform
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+  labels:
+    env: monitoring
+    managed-by: terraform
 
