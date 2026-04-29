@@ -76,7 +76,7 @@ alertmanager:
 prometheus:
   prometheusSpec:
     retention: 15d
-    retentionSize: "18GB"
+    retentionSize: "8GB"
     storageSpec:
       volumeClaimTemplate:
         spec:
@@ -84,14 +84,14 @@ prometheus:
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
-              storage: 20Gi
+              storage: 10Gi
     resources:
       requests:
-        cpu: 500m
-        memory: 2Gi
+        cpu: 200m
+        memory: 512Mi
       limits:
-        cpu: 2000m
-        memory: 4Gi
+        cpu: 1000m
+        memory: 1200Mi
     serviceMonitorSelectorNilUsesHelmValues: false
     podMonitorSelectorNilUsesHelmValues: false
     ruleSelectorNilUsesHelmValues: false
@@ -103,7 +103,7 @@ prometheusOperator:
       memory: 128Mi
     limits:
       cpu: 500m
-      memory: 512Mi
+      memory: 256Mi
 
 kubeStateMetrics:
   enabled: true
