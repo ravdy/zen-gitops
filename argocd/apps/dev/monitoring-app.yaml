@@ -19,7 +19,7 @@ spec:
       targetRevision: 84.3.0
       helm:
         valueFiles:
-          - $values/k8s/monitoring/prometheus-values.yaml
+          - $values/envs/monitoring/prometheus-values.yaml
 
     # Values file reference for the Helm chart above
     - repoURL: https://github.com/ravdy/zen-gitops.git
@@ -51,5 +51,15 @@ spec:
         duration: 5s
         factor: 2
         maxDuration: 3m
+
+  ignoreDifferences:
+    - group: admissionregistration.k8s.io
+      kind: ValidatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
+    - group: admissionregistration.k8s.io
+      kind: MutatingWebhookConfiguration
+      jsonPointers:
+        - /webhooks/0/clientConfig/caBundle
 
   revisionHistoryLimit: 10
