@@ -354,6 +354,117 @@ All manifests live on the `feature/fluent-bit-logging` branch. Do **not** merge 
 
 ---
 
+## How Dashboards Are Working Right Now (Live State)
+
+Your Grafana pod has **3 containers** running inside it:
+
+```
+Pod: monitoring-grafana
+├── grafana-sc-dashboard    ← the sidecar watcher
+├── grafana-sc-datasources  ← datasource watcher
+└── grafana                 ← the actual Grafana app
+```
+
+There are **two separate streams** loading dashboards in:
+
+---
+
+### Stream 1 — 28 dashboards via the sidecar
+
+```
+28 ConfigMaps in the cluster
+(all labelled grafana_dashboard: "1")
+        │
+        ▼
+grafana-sc-dashboard container
+watches ALL namespaces every 60s
+        │
+        ▼
+copies JSON files into /tmp/dashboards/
+        │
+        ▼
+sidecarProvider reads /tmp/dashboards/
+and loads dashboards into Grafana live
+```
+
+The sidecar checks every 60 seconds. Any new ConfigMap labelled `grafana_dashboard: "1"` is picked up automatically — no restart needed.
+
+---
+
+### Stream 2 — Fluent Bit dashboard from grafana.com
+
+```
+prometheus-values.yaml  →  gnetId: 7752
+        │
+        ▼
+Grafana init container fetches it from grafana.com at startup
+        │
+        ▼
+Written to: /var/lib/grafana/dashboards/default/fluent-bit.json
+        │
+        ▼
+Dashboard provider config reads that path:
+
+  providers:
+  - name: default
+    folder: Pharma        ← appears under the Pharma folder in Grafana
+    path: /var/lib/grafana/dashboards/default
+        │
+        ▼
+Loaded into Grafana under the "Pharma" folder
+```
+
+---
+
+### What You See in Grafana Right Now
+
+| Folder | Dashboards | Source |
+|--------|-----------|--------|
+| **Pharma** | Fluent Bit (1) | Downloaded from grafana.com at pod startup → `/var/lib/grafana/dashboards/default/fluent-bit.json` |
+| **General** | 28 Kubernetes dashboards | kube-prometheus-stack ConfigMaps → sidecar → `/tmp/dashboards/` |
+
+---
+
+### Key Difference Between the Two Paths
+
+| | Sidecar (28 dashboards) | Provider (Fluent Bit) |
+|-|------------------------|----------------------|
+| Loaded from | ConfigMaps in k8s | File on disk |
+| Refreshes | Every 60s — live | Only on pod restart |
+| Stored in | `/tmp/dashboards/` | `/var/lib/grafana/dashboards/default/` |
+| How to add more | Create a labelled ConfigMap | Add `gnetId` to `prometheus-values.yaml` |
+
+---
+
+### How to Add Your Own Dashboard
+
+**Option A — Label a ConfigMap** (picked up live by the sidecar):
+
+```yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: my-api-gateway-dashboard
+  namespace: dev
+  labels:
+    grafana_dashboard: "1"    # sidecar watches for this label
+data:
+  api-gateway.json: |
+    { ... grafana dashboard JSON ... }
+```
+
+**Option B — Add to `prometheus-values.yaml`** (fetched from grafana.com at startup):
+
+```yaml
+dashboards:
+  default:
+    kubernetes-overview:
+      gnetId: 15661    # any dashboard ID from grafana.com/dashboards
+      datasource: Prometheus
+```
+
+---
+
 ## Prerequisites
 
 ### 1. Ensure nodes have enough capacity
