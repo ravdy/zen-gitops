@@ -4,7 +4,7 @@ grafana:
     enabled: true
     existingClaim: grafana
     size: 10Gi
-    storageClassName: gp2
+    storageClassName: gp2-csi
   ingress:
     enabled: true
     ingressClassName: nginx
@@ -68,7 +68,7 @@ alertmanager:
     storage:
       volumeClaimTemplate:
         spec:
-          storageClassName: gp2
+          storageClassName: gp2-csi
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
@@ -81,7 +81,7 @@ prometheus:
     storageSpec:
       volumeClaimTemplate:
         spec:
-          storageClassName: gp2
+          storageClassName: gp2-csi
           accessModes: ["ReadWriteOnce"]
           resources:
             requests:
