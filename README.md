@@ -156,3 +156,162 @@ git push
 
 See `zen-infra/docs/FULL-DEPLOYMENT-GUIDE.md` in the `zen-infra` repository for the complete
 step-by-step guide covering all 4 stages: infra → prerequisites → CI → ArgoCD CD.
+
+---
+
+## Fluent Bit Log Shipping (EKS → Elastic Cloud)
+
+Fluent Bit runs as a DaemonSet in the `dev` namespace and ships container logs to Elastic Cloud.
+
+**Manifests:** `k8s/fluent-bit/`
+
+| File | Purpose |
+|---|---|
+| `rbac.yaml` | ServiceAccount, ClusterRole, ClusterRoleBinding |
+| `secret.yaml` | Elastic Cloud API key |
+| `configmap.yaml` | Fluent Bit config, parsers, and Lua script |
+| `daemonset.yaml` | DaemonSet — one pod per node |
+
+### How it works
+
+1. **INPUT** — tails `/var/log/containers/*.log` on every node (Docker and CRI formats)
+2. **FILTER** — Kubernetes filter enriches each record with pod metadata (labels, namespace, pod name)
+3. **FILTER** — grep keeps only `dev` namespace logs and drops Fluent Bit's own logs
+4. **FILTER** — Lua script (`service_index.lua`) extracts the service name from the pod's `app` label and sets it as `_service_name` on the record
+5. **OUTPUT** — Elasticsearch output ships to Elastic Cloud over TLS using an API key; `Logstash_Prefix_Key _service_name` creates one daily index per service
+
+### Elastic Cloud endpoint
+
+```
+https://97f1fa5d7d9d4d58ba3926dfb84ebeb0.us-central1.gcp.cloud.es.io:443
+```
+
+### Index naming
+
+Each service gets its own daily index:
+
+```
+api-gateway-YYYY.MM.DD
+auth-service-YYYY.MM.DD
+drug-catalog-service-YYYY.MM.DD
+inventory-service-YYYY.MM.DD
+manufacturing-service-YYYY.MM.DD
+notification-service-YYYY.MM.DD
+pharma-ui-YYYY.MM.DD
+```
+
+### Deploy
+
+```bash
+kubectl apply -f k8s/fluent-bit/rbac.yaml
+kubectl apply -f k8s/fluent-bit/configmap.yaml
+kubectl apply -f k8s/fluent-bit/secret.yaml
+kubectl apply -f k8s/fluent-bit/daemonset.yaml
+
+# Verify
+kubectl get daemonset fluent-bit -n dev
+kubectl logs -l app=fluent-bit -n dev --tail=30
+```
+
+### Image
+
+`fluent/fluent-bit:latest` — requires `latest` (or ≥ 4.0) for `http_api_key` support in the ES output plugin.
+
+---
+
+## Elastic Cloud Setup
+
+### Login
+
+Go to **https://cloud.elastic.co/login** and sign in with Google.
+
+Once logged in you will land on the Kibana home screen:
+
+![Elastic Cloud Console](docs/images/elastic-cloud-console.png)
+
+---
+
+### Getting the Endpoint URL
+
+The Elasticsearch endpoint is shown at the top of the Kibana home screen next to the **Elasticsearch** label:
+
+```
+https://97f1fa5d7d9d4d58ba3926dfb84ebeb0.us-central1.gcp.cloud.es.io
+```
+
+You can click the copy icon next to it to copy it to your clipboard. This is the value used as `elasticsearch.host` in `envs/dev/values-fluent-bit.yaml`.
+
+---
+
+### Creating an API Key
+
+1. Click **API keys** in the top-right corner of the Kibana home screen (visible in the screenshot above)
+2. Click **Create API key**
+3. Give it a name (e.g. `fluent-bit-dev`) and set appropriate index privileges (`write`, `create_index`) on `*` or a specific index pattern
+4. Click **Create** — copy the **encoded** key immediately (it is shown only once)
+
+The encoded key looks like:
+```
+Ylc4VnY1MEJKQU5ESDFhNk1PcFo6QktkNnBGM3FndWV4SkoxQ2I3bjk2dw==
+```
+
+Update the Kubernetes secret with the new key:
+```bash
+kubectl create secret generic fluent-bit-elastic-credentials \
+  --from-literal=api_key='<your-encoded-api-key>' \
+  -n dev \
+  --dry-run=client -o yaml | kubectl apply -f -
+```
+
+---
+
+## How Fluent Bit Works in EKS
+
+### DaemonSet — one pod per node
+
+Kubernetes schedules one Fluent Bit pod on every EKS worker node. Since all container logs live on the node's filesystem at `/var/log/containers/`, each Fluent Bit pod only needs to read the logs from its own node.
+
+```
+Node 1  →  fluent-bit pod  →  reads /var/log/containers/* on Node 1
+Node 2  →  fluent-bit pod  →  reads /var/log/containers/* on Node 2
+Node 3  →  fluent-bit pod  →  reads /var/log/containers/* on Node 3
+```
+
+### The pipeline (inside each pod)
+
+```
+/var/log/containers/*.log
+        ↓
+   [INPUT: tail]           — reads new log lines, tracks position in SQLite DB
+        ↓
+   [FILTER: kubernetes]    — enriches each line with pod name, namespace, labels
+        ↓
+   [FILTER: grep]          — keeps only dev namespace, drops fluent-bit's own logs
+        ↓
+   [FILTER: lua]           — reads the 'app' label → sets _service_name = "api-gateway"
+        ↓
+   [OUTPUT: elasticsearch] — ships to Elastic Cloud, creates index api-gateway-2026.04.24
+```
+
+### Helm chart structure
+
+| File | What it creates |
+|---|---|
+| `templates/rbac.yaml` | ServiceAccount + ClusterRole so the pod can read pod/node metadata from the K8s API |
+| `templates/configmap.yaml` | The actual Fluent Bit config (`fluent-bit.conf`, `parsers.conf`, Lua script) — mounted into the pod at `/fluent-bit/etc/` |
+| `templates/daemonset.yaml` | The DaemonSet — mounts host `/var/log` read-only, mounts the ConfigMap, pulls the API key from the Secret |
+
+The Secret (`fluent-bit-elastic-credentials`) is managed outside the chart — the chart just references it by name. This keeps the API key out of git.
+
+### Why `values-fluent-bit.yaml` matters
+
+```yaml
+elasticsearch:
+  host: 97f1fa5d7d9d4d58ba3926dfb84ebeb0.us-central1.gcp.cloud.es.io
+  port: 443
+
+fluentbit:
+  filterNamespace: dev   # only collect from this namespace
+```
+
+These values get injected into the ConfigMap template at deploy time, so changing the target environment (e.g. `qa`) just means a different values file — the chart stays the same.
