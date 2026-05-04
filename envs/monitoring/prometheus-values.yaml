@@ -2,6 +2,7 @@ grafana:
   adminPassword: pharma-grafana-2026
   persistence:
     enabled: true
+    existingClaim: grafana
     size: 10Gi
     storageClassName: gp2
   ingress:
