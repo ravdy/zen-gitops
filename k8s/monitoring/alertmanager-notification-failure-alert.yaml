@@ -1,0 +1,25 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: alertmanager-notification-failure
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: alertmanager.notification
+      interval: 1m
+      rules:
+        - alert: AlertmanagerNotificationsFailing
+          expr: |
+            (
+              rate(alertmanager_notifications_failed_total{container="alertmanager",job="monitoring-kube-prometheus-alertmanager",namespace="monitoring"}[15m])
+              / ignoring (reason) group_left ()
+              rate(alertmanager_notifications_total{container="alertmanager",job="monitoring-kube-prometheus-alertmanager",namespace="monitoring"}[15m])
+            ) > 0.01
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Alertmanager is failing to send notifications"
+            description: "Alertmanager {{ $labels.instance }} is failing to deliver more than 1% of notifications (failure rate: {{ $value | humanizePercentage }})."

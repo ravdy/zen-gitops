@@ -44,11 +44,6 @@ grafana:
 alertmanager:
   enabled: true
   config:
-    global:
-      smtp_smarthost: "smtp.pharma.com:587"
-      smtp_from: "alertmanager@pharma.com"
-      smtp_auth_username: "alertmanager@pharma.com"
-      smtp_auth_password: "changeme"
     route:
       group_by: ["alertname", "cluster", "service"]
       group_wait: 30s
@@ -60,10 +55,6 @@ alertmanager:
             severity: critical
           receiver: "webhook-demo"
     receivers:
-      - name: "email-notifications"
-        email_configs:
-          - to: "devops@pharma.com"
-            send_resolved: true
       - name: "webhook-demo"
         webhook_configs:
           - url: "https://webhook.site/c5e1e618-f2fa-4bd0-b425-0910772301d7"
