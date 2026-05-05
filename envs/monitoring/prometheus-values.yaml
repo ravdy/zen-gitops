@@ -54,15 +54,19 @@ alertmanager:
       group_wait: 30s
       group_interval: 5m
       repeat_interval: 12h
-      receiver: "email-notifications"
+      receiver: "webhook-demo"
       routes:
         - match:
             severity: critical
-          receiver: "email-notifications"
+          receiver: "webhook-demo"
     receivers:
       - name: "email-notifications"
         email_configs:
           - to: "devops@pharma.com"
+            send_resolved: true
+      - name: "webhook-demo"
+        webhook_configs:
+          - url: "https://webhook.site/c5e1e618-f2fa-4bd0-b425-0910772301d7"
             send_resolved: true
   alertmanagerSpec:
     storage:

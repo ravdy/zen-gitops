@@ -1,0 +1,20 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: crash-demo-alert
+  namespace: monitoring
+  labels:
+    release: monitoring
+spec:
+  groups:
+    - name: crash-demo
+      interval: 30s
+      rules:
+        - alert: CrashDemoPodCrashing
+          expr: increase(kube_pod_container_status_restarts_total{pod="crash-demo", namespace="dev"}[2m]) > 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Pod crash-demo is crash looping"
+            description: "Pod crash-demo in namespace dev has restarted {{ $value | printf \"%.0f\" }} times in the last 2 minutes."
