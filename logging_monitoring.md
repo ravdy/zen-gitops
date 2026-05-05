@@ -553,11 +553,11 @@ git show origin/feature/fluent-bit-logging:k8s/namespaces.yaml | kubectl apply -
 git show origin/feature/fluent-bit-logging:k8s/monitoring/pvc.yaml | kubectl apply -f -
 ```
 
-| PVC | Size | Used by |
-|-----|------|---------|
-| `grafana` | 10Gi | Grafana |
-| `prometheus-data` | 10Gi | Prometheus |
-| `alertmanager-data` | 5Gi | Alertmanager |
+| PVC | Size | Used by | Managed by |
+|-----|------|---------|------------|
+| `grafana` | 10Gi | Grafana | This file (`pvc.yaml`) |
+| `prometheus-data` | 10Gi | Prometheus | Helm (auto-created) |
+| `alertmanager-data` | 5Gi | Alertmanager | Helm (auto-created) |
 
 ### 4. Apply ArgoCD apps
 
