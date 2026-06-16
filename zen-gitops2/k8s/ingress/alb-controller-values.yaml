@@ -1,0 +1,30 @@
+replicaCount: 2
+
+clusterName: pharma-dev-cluster
+# region and vpcId are injected at install time by 01_install_prerequisites.py
+# via --set flags so they stay dynamic across VPC/cluster rebuilds.
+
+serviceAccount:
+  create: true
+  name: aws-load-balancer-controller
+  annotations:
+    eks.amazonaws.com/role-arn: arn:aws:iam::873135413040:role/pharma-dev-alb-controller-role
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 200m
+    memory: 256Mi
+
+podDisruptionBudget:
+  maxUnavailable: 1
+
+metrics:
+  enabled: true
+  service:
+    annotations:
+      prometheus.io/scrape: "true"
+      prometheus.io/port: "8080"
+      prometheus.io/path: "/metrics"
